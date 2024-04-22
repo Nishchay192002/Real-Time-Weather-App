@@ -1,36 +1,57 @@
-from flask import Flask, render_template
-from flask_socketio import SocketIO, emit
 import requests
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
-socketio = SocketIO(app)
 
-# Replace 'your-openweathermap-api-key' with your actual OpenWeatherMap API key
-OPENWEATHER_API_KEY = 'bd5e378503939ddaee76f12ad7a97608'
+def get_weather(city_name):
+    api_key = "bd5e378503939ddaee76f12ad7a97608"
+    base_url = "http://api.openweathermap.org/data/2.5/weather?"
+    complete_url = f"{base_url}q={city_name}&appid={api_key}&units=metric"
+    response = requests.get(complete_url)
+    data = response.json()
 
-@app.route('/')
+    if data["cod"] != "404":
+        main_data = data["main"]
+        weather_data = data["weather"][0]
+        pollution_data = get_pollution(city_name)
+
+        weather = {
+            "city": city_name,
+            "temperature": main_data["temp"],
+            "humidity": main_data["humidity"],
+            "description": weather_data["description"],
+            "icon": weather_data["icon"],
+            "pollution": pollution_data
+        }
+        return weather
+    else:
+        return None
+
+def get_pollution(city_name):
+    api_key = "YOUR_OPENAQ_API_KEY"
+    base_url = "https://api.openaq.org/v1/latest?"
+    complete_url = f"{base_url}city={city_name}&parameter=pm25&limit=1&order_by=lastUpdated&sort=desc&format=json"
+    response = requests.get(complete_url)
+    data = response.json()
+
+    if "results" in data and data["results"]:
+        pollution_data = data["results"][0]["measurements"][0]["value"]
+        return pollution_data
+    else:
+        return None
+
+@app.route("/", methods=["GET", "POST"])
 def index():
-    return render_template('index.html')
+    weather = None
+    if request.method == "POST":
+        city = request.form["city"]
+        weather = get_weather(city)
 
-@socketio.on('get_weather')
-def get_weather(data):
-    city = data['city']
-    weather_data = fetch_weather(city)
-    emit('weather_response', {'city': city, 'weather_data': weather_data})
+    return render_template("index.html", weather=weather)
 
-def fetch_weather(city):
-    try:
-        url = f'http://api.openweathermap.org/data/2.5/weather?q={city}&appid={OPENWEATHER_API_KEY}'
-        response = requests.get(url)
-        weather_data = response.json()
+@app.route("/emergency")
+def emergency():
+    return render_template("emergency.html")
 
-        if 'main' in weather_data:
-            # Convert temperature from Kelvin to Celsius
-            weather_data['main']['temp'] = round(weather_data['main']['temp'] - 273.15, 2)
-            
-        return weather_data
-    except Exception as e:
-        return {'error': str(e)}
-
-if __name__ == '__main__':
-    socketio.run(app, debug=True)
+if __name__ == "__main__":
+    app.run(debug=True)
