@@ -2,115 +2,89 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-time Weather Application</title>
+    <title>Weather App</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(to right, #76b852, #8dc26f); /* Gradient background */
-            color: #fff; /* Text color */
-        }
-        #weather-container {
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            padding: 20px;
-            background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white background */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            margin: 20px;
-            text-align: center;
-            position: relative;
-        }
-        .cloud {
-            background: url('https://image-url/cloud.png') no-repeat;
-            background-size: contain;
-            width: 100px;
-            height: 60px;
-            position: absolute;
-            top: 30px;
-            animation: cloudAnimation 4s linear infinite;
-        }
-        input[type="text"] {
-            width: 70%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            margin-right: 10px;
-        }
-        button {
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            background-color: #4caf50;
-            color: #fff;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        h2 {
-            color: #333;
-        }
-        p {
-            margin: 10px 0;
-            color: #555;
-        }
-        strong {
-            font-weight: bold;
+            font-family: Arial, sans-serif;
+            background-color: #6f71d8;
         }
 
-        @keyframes cloudAnimation {
+        .weather-container {
+            text-align: center;
+            background-color: #c9b1cf;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            margin: 0 auto;
+        }
+
+        .weather-container img {
+            display: block;
+            margin: 0 auto;
+            margin-bottom: 20px;
+            animation: floatCloud 8s linear infinite;
+        }
+
+        .weather-container p {
+            margin-bottom: 5px;
+        }
+
+        a {
+            text-decoration: none;
+            color: #000000;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        ul {
+            padding: 0;
+            list-style-type: none;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        h2, h3 {
+            color: #333;
+            text-align: center;
+        }
+
+        @keyframes floatCloud {
             0% {
-                transform: translateX(-100%);
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-15px);
             }
             100% {
-                transform: translateX(100%);
+                transform: translateY(0px);
             }
         }
     </style>
 </head>
 <body>
-
-<div id="weather-container">
-    <div class="cloud"></div>
-    <h2 id="city-name"></h2>
-    <p id="temperature"></p>
-    <p id="weather-description"></p>
-    <p id="humidity"></p>
-</div>
-
-<input type="text" id="cityInput" placeholder="Enter city...">
-<button onclick="getWeather()">Get Weather</button>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
-<script>
-    var socket = io.connect('http://' + document.domain + ':' + location.port);
-
-    socket.on('weather_response', function(data) {
-        var cityNameElement = document.getElementById('city-name');
-        var temperatureElement = document.getElementById('temperature');
-        var weatherDescriptionElement = document.getElementById('weather-description');
-        var humidityElement = document.getElementById('humidity');
-
-        cityNameElement.textContent = 'Weather in ' + data.city;
-        
-        if (data.weather_data.error) {
-            temperatureElement.textContent = 'Error: ' + data.weather_data.error;
-        } else {
-            temperatureElement.textContent = 'Temperature: ' + data.weather_data.main.temp + ' °C';
-            weatherDescriptionElement.textContent = 'Weather: ' + data.weather_data.weather[0].description;
-            humidityElement.textContent = 'Humidity: ' + data.weather_data.main.humidity + '%';
-        }
-    });
-
-    function getWeather() {
-        var cityInput = document.getElementById('cityInput').value;
-        socket.emit('get_weather', {'city': cityInput});
-        document.getElementById('cityInput').value = '';
-    }
-</script>
-
+    <h2><b>Real-Time Weather App</b></h2>
+    <form method="POST" action="/">
+        <label for="city"><b>City Name: </b> </label>
+        <input type="text" id="city" name="city" required>
+        <button type="submit">Submit</button>
+    </form>
+    {% if weather %}
+    <div class="weather-container">
+        <h3><b>Weather in {{ weather.city }}:</b></h3>
+        <img src="http://openweathermap.org/img/wn/{{ weather.icon }}.png" alt="Weather Icon">
+        <p>Temperature: {{ weather.temperature }}°C</p>
+        <p>Humidity: {{ weather.humidity }}%</p>
+        <p>Description: {{ weather.description }}</p>
+        <p>Pollution (PM2.5): {{ weather.pollution }} µg/m³</p>
+    </div>
+    {% endif %}
+    <br>
+    <a href="/emergency"><b>Emergency Services Contact Information</b></a>
 </body>
 </html>
